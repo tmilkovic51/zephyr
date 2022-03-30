@@ -33,22 +33,22 @@
 	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */
 	sram0: memory@24000000 {
 		compatible = "mmio-sram";
-		reg = <0x24000000 DT_SIZE_K(256)>;
+		reg = <0x24000000 DT_SIZE_K(1024)>;
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM2 in CD domain */
-	sram1: memory@24040000 {
+	/*sram1: memory@24040000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24040000 DT_SIZE_K(384)>;
 		zephyr,memory-region = "SRAM1";
-	};
+	};*/
 
 	/* System data RAM accessible over AXI bus: AXI SRAM3 in CD domain */
-	sram2: memory@240A0000 {
+	/*sram2: memory@240A0000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x240A0000 DT_SIZE_K(384)>;
 		zephyr,memory-region = "SRAM2";
-	};
+	};*/
 
 	/* System data RAM accessible over AHB bus: SRAM1 in CD domain */
 	sram3: memory@30000000 {
