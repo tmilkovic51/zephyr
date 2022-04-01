@@ -1,0 +1,115 @@
+# Copyright (c) 2022, Byte Lab d.o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MRF24J40 802.15.4 wireless transceiver
+
+compatible: "microchip,mrf24j40"
+
+include: spi-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: true
+      description: Interrupt pin.
+
+        The interrupt pin of MRF24J40. Active edge of the
+        interrupt is configurable through the chip's SPI interface.
+        Driver will configure the active edge according to GPIO
+        flags provided in this property (GPIO_ACTIVE_LOW = falling
+        edge, GPIO_ACTIVE_HIGH = rising edge).
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: RESET pin.
+
+        The RESET pin of MRF24J40. It is active low.
+        The chip has an interrnal weak pull-up resistor
+        on this pin.
+
+    wake-gpios:
+      type: phandle-array
+      required: false
+      description: WAKE pin.
+
+        The WAKE pin of MRF24J40. Its polarity is configurable
+        through the chip's SPI interface. Driver will configure the
+        polarity according to GPIO flags provided in this property
+        (GPIO_ACTIVE_LOW = falling edge, GPIO_ACTIVE_HIGH = rising edge).
+
+    mac-addr:
+      type: uint8-array
+      required: false
+      description: Unique 64-bit MAC address assigned to device.
+
+        This address needs to be globally unique.
+
+    nonbeacon-mode-en:
+      type: boolean
+      required: false
+      description: Enable IEEE 802.15.4 nonbeacon (unslotted) mode.
+
+        If enabled, the device will support connecting to a
+        nonbeacon-enabled network.
+        Otherwise, the device will support beacon-enabled networks.
+
+    turbo-mode-en:
+      type: boolean
+      required: false
+      description: Enable high data rate - 625 kbps (turbo mode).
+
+        The transceiver supports transmitting and receiving messages
+        at 625 kbps for use with proprietary protocols.
+        This data rate is not compliant with IEEE 802.15.4 standard.
+
+    sleep-clock-32khz-en:
+      type: boolean
+      required: false
+      description: Use external 32.768 kHz oscillator as a sleep clock.
+
+        Enable this if external 32.768 kHz oscillator is present in hardware.
+        If left disabled, then 100 kHz internal oscillator will be used as a
+        sleep clock. Beware that 100 kHz internal oscillator provides inferior
+        frequency accuracy and stability compared to the external 32.768 kHz
+        oscillator.
+
+    pa-lna-ctrl-en:
+      type: boolean
+      required: false
+      description: Enable external PA/LNA switches to be controlled by MRF24J40.
+
+        When this functionality is enabled, the internal RF state machine
+        of MRF24J40 will control external PA/LNA switches via the chip's
+        GPIO0, GPIO1 and GPIO2 pins.
+        Enable this if you are using MRF24J40MB/MC/MD/ME module, or a custom module
+        with external PA/LNA.
+        If not enabled, the driver will configure GPIO0, GPIO1 and GPIO2 pins as
+        inputs.
+
+    gpio3-output:
+      type: int
+      required: false
+      default: 0xFF
+      description: Configure the chip GPIO3 as output and set it to `0` or `1`,
+        depending on this property's value.
+
+        Set this to `1` if you are using MRF24J40MC module in order to turn on
+        the voltage regulator for the module's power amplifier.
+        Default value of `0xFF` signals the driver to configure this pin as input.
+
+    gpio4-output:
+      type: int
+      required: false
+      default: 0xFF
+      description: Configure the chip GPIO4 as output and set it to `0` or `1`,
+        depending on this property's value.
+        Default value of `0xFF` signals the driver to configure this pin as input.
+
+    gpio5-output:
+      type: int
+      required: false
+      default: 0xFF
+      description: Configure the chip GPIO5 as output and set it to `0` or `1`,
+        depending on this property's value.
+        Default value of `0xFF` signals the driver to configure this pin as input.
