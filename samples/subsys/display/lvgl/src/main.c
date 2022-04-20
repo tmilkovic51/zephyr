@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/zephyr.h>
-#include <../../../../../lib/gui/lvgl/demos/lv_demos.h>
+#include <../../../../../modules/lib/gui/lvgl/demos/lv_demos.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
