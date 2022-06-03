@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+DT_COMPAT_ST_STM32_EMMC := st,stm32-emmc
 DT_COMPAT_ZEPHYR_MMC := zephyr,sdmmc-disk
 
 config DISK_DRIVER_SDMMC
@@ -44,9 +45,18 @@ config SDMMC_STM32
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
 
+config EMMC_STM32
+	bool "STM32 eMMC driver"
+	depends on HAS_STM32CUBE
+	select USE_STM32_HAL_MMC
+	select USE_STM32_LL_SDMMC
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_EMMC))
+	help
+	  STM32 eMMC controller shim driver.
+
 config SDMMC_STM32_HWFC
 	bool "STM32 SDMMC Hardware Flow control"
-	depends on SDMMC_STM32
+	depends on SDMMC_STM32 || EMMC_STM32
 	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32L4X
 	help
 	  Enable SDMMC Hardware Flow Control to avoid FIFO underrun (TX mode) and
