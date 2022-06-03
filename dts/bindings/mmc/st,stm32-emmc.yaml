@@ -1,0 +1,26 @@
+description: STM32 eMMC disk access
+
+compatible: "st,stm32-emmc"
+
+include: [mmc.yaml, pinctrl-device.yaml]
+
+properties:
+    clocks:
+        required: true
+
+    label:
+        required: true
+
+    reg:
+        required: true
+
+    pinctrl-0:
+      required: true
+
+    pinctrl-names:
+      required: true
+
+    reset-gpios:
+        type: phandle-array
+        required: false
+        description: eMMC reset pin
