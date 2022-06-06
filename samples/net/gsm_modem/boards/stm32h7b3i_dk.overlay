@@ -1,0 +1,9 @@
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+	label = "GSM_UART";
+	lte_modem: gsm-modem {
+		compatible = "zephyr,gsm-ppp";
+		label = "GSM_PPP";
+	};
+};
