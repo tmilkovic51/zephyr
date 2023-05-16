@@ -20,7 +20,7 @@ struct internal_ctx {
 	bool exit      : 1;
 };
 
-static bool share_paren(const struct smf_state *test_state,
+static bool share_parent(const struct smf_state *test_state,
 			const struct smf_state *target_state)
 {
 	for (const struct smf_state *state = test_state;
@@ -34,7 +34,7 @@ static bool share_paren(const struct smf_state *test_state,
 	return false;
 }
 
-static bool last_state_share_paren(struct smf_ctx *const ctx,
+static bool last_state_share_parent(struct smf_ctx *const ctx,
 				   const struct smf_state *state)
 {
 	/* Get parent state of previous state */
@@ -42,7 +42,7 @@ static bool last_state_share_paren(struct smf_ctx *const ctx,
 		return false;
 	}
 
-	return share_paren(ctx->previous->parent, state);
+	return share_parent(ctx->previous->parent, state);
 }
 
 static const struct smf_state *get_child_of(const struct smf_state *states,
@@ -82,7 +82,7 @@ __unused static bool smf_execute_ancestor_entry_actions(
 	     to_execute != NULL && to_execute != target;
 	     to_execute = get_child_of(target, to_execute)) {
 		/* Execute parent state's entry */
-		if (!last_state_share_paren(ctx, to_execute) && to_execute->entry) {
+		if (!last_state_share_parent(ctx, to_execute) && to_execute->entry) {
 			to_execute->entry(ctx);
 
 			/* No need to continue if terminate was set */
@@ -159,7 +159,7 @@ __unused static bool smf_execute_ancestor_exit_actions(
 	for (const struct smf_state *tmp_state = ctx->current->parent;
 	     tmp_state != NULL;
 	     tmp_state = tmp_state->parent) {
-		if (!share_paren(target->parent, tmp_state) && tmp_state->exit) {
+		if (!share_parent(target->parent, tmp_state) && tmp_state->exit) {
 			tmp_state->exit(ctx);
 
 			/* No need to continue if terminate was set */
