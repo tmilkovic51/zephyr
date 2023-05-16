@@ -95,6 +95,8 @@ struct smf_ctx {
 	const struct smf_state *current;
 	/** Previous state the state machine executed */
 	const struct smf_state *previous;
+	/** Next state the state machine will execute */
+	const struct smf_state *next;
 	/**
 	 * This value is set by the set_terminate function and
 	 * should terminate the state machine when its set to a
