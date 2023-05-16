@@ -210,48 +210,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *target)
 	}
 
 	internal->exit = true;
-
-	/* Execute the current states exit action */
-	if (ctx->current->exit) {
-		ctx->current->exit(ctx);
-
-		/*
-		 * No need to continue if terminate was set in the
-		 * exit action
-		 */
-		if (internal->terminate) {
-			return;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
-		internal->new_state = true;
-
-		if (smf_execute_ancestor_exit_actions(ctx, target)) {
-			return;
-		}
-	}
-
-	internal->exit = false;
-
-	/* update the state variables */
-	ctx->previous = ctx->current;
-	ctx->current = target;
-
-	if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
-		if (smf_execute_ancestor_entry_actions(ctx, target)) {
-			return;
-		}
-	}
-
-	/* Now execute the target entry action */
-	if (ctx->current->entry) {
-		ctx->current->entry(ctx);
-		/*
-		 * If terminate was set, it will be handled in the
-		 * smf_run_state function
-		 */
-	}
+	ctx->next = target;
 }
 
 void smf_set_terminate(struct smf_ctx *ctx, int32_t val)
@@ -275,9 +234,57 @@ int32_t smf_run_state(struct smf_ctx *const ctx)
 		ctx->current->run(ctx);
 	}
 
-	if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
-		if (smf_execute_ancestor_run_actions(ctx)) {
-			return ctx->terminate_val;
+	/* If state transition has been requested, execute the current state's exit action  */
+	if (internal->exit) {
+		if(ctx->current->exit) {
+			ctx->current->exit(ctx);
+
+			/*
+			* No need to continue if terminate was set in the
+			* exit action
+			*/
+			if (internal->terminate) {
+				return ctx->terminate_val;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
+			internal->new_state = true;
+
+			if (smf_execute_ancestor_exit_actions(ctx, ctx->next)) {
+				return ctx->terminate_val;
+			}
+		}
+
+		internal->exit = false;
+		/* update the state variables */
+		ctx->previous = ctx->current;
+		ctx->current = ctx->next;
+		ctx->next = NULL;
+
+		if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
+			if (smf_execute_ancestor_entry_actions(ctx, ctx->current)) {
+				return ctx->terminate_val;
+			}
+		}
+
+		/* Now execute the target entry action */
+		if (ctx->current->entry) {
+			ctx->current->entry(ctx);
+
+			if (internal->terminate) {
+				return ctx->terminate_val;
+			}
+		}
+	} else {
+		/*
+		 * The parent run function only executes if the child run function returns
+		 * without transitioning to another state, ie. calling smf_set_state.
+		 */
+		if (IS_ENABLED(CONFIG_SMF_ANCESTOR_SUPPORT)) {
+			if (smf_execute_ancestor_run_actions(ctx)) {
+				return ctx->terminate_val;
+			}
 		}
 	}
 
