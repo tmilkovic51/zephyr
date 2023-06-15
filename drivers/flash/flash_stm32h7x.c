@@ -370,8 +370,11 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	uint8_t unaligned_datas[nbytes];
 
 	for (i = 0; i < len && i + nbytes <= len; i += nbytes, offset += nbytes) {
+		// Copy source data into an array on stack, in case source data is unaligned
+		memcpy(&unaligned_datas[0], &((const uint8_t*)data)[i], nbytes);
+
 		rc = write_ndwords(dev, offset,
-				   (const uint64_t *) data + (i >> 3),
+				   (const uint64_t *) unaligned_datas,
 				   ndwords);
 		if (rc < 0) {
 			return rc;
