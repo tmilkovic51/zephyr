@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Tomislav Milkovic
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Aosong AHT I2C Humidity and Temperature Sensor
+
+    The Aosong AHT family of sensors provides temperature and humidity
+    measurements through digital I2C interface. Designed as a replacement
+    for the DHT family, the AHT family contains an improved MEMS semiconductor
+    capacitive humidity sensor and a standard on-chip temperature sensor.
+
+    AHT1x series does not support sharing the I2C bus with other devices,
+    while AHT2x and AHT3x series do.
+
+compatible: "aosong,aht"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  power-gpios:
+    type: phandle-array
+    description: |
+      Pin used for enabling the sensor power supply.
