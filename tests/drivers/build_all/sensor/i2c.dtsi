@@ -869,3 +869,9 @@ test_i2c_lps28dfw: lps28dfw@7b {
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 	fs = <LPS28DFW_DT_FS_MODE_1_1260>;
 };
+
+test_i2c_aht: aht21@7c {
+	compatible = "aosong,aht";
+	reg = <0x7c>;
+	power-gpios = <&test_gpio 0 0>;
+};
