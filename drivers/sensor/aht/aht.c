@@ -6,13 +6,13 @@
 
 #define DT_DRV_COMPAT aosong_aht
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/logging/log.h>
 
@@ -36,35 +36,41 @@ struct aht_data {
 };
 
 static const uint8_t aht_cmd_soft_reset[] = { 0xBAu };
-static const uint8_t aht_cmd_load_calibration[] = { 0xBEu, 0x08u, 0x00u }; /* 0xE1 for AHT1x series, 0xB1 (or maybe 0xBE?) for AHT2x series */
+static const uint8_t aht_cmd_load_calibration[] = { 0xBEu, 0x08u, 0x00u };
 static const uint8_t aht_cmd_start_measurement[] = { 0xACu, 0x33u, 0x00u };
 
 
 static bool aht_check_crc(uint8_t *buf)
 {
 	/* Uses Dallas/Maxim CRC-8 polynomial */
-	return (buf[6] == crc8(&buf[0], 6, 0x31, 0xFF, false));
+	if(buf[6] != crc8(&buf[0], 6, 0x31, 0xFF, false))
+	{
+		LOG_ERR("Measurement data CRC mismatch! Calculated: %x, received: %x", crc8(&buf[0], 6, 0x31, 0xFF, false), buf[6]);
+		LOG_HEXDUMP_ERR(buf, 7, "Registers: ");
+		return false;
+	}
+
+	return true;
 }
 
 static int aht_reset(const struct device *dev)
 {
 	const struct aht_config *config = dev->config;
+	int ret = 0;
 
 	/* Toggle power supply GPIO if power-gpios property was provided in DT */
 	if(device_is_ready(config->power_gpio.port)) {
-		gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_INACTIVE);
-		k_msleep(10);
-		gpio_pin_set_dt(&config->power_gpio, 1);
+		ret = gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_INACTIVE);
+		k_msleep(100);
+		ret = gpio_pin_set_dt(&config->power_gpio, 1);
 	} else {
 		/* Otherwise send soft reset command */
-		if(i2c_write_dt(&config->bus, &aht_cmd_soft_reset[0], sizeof(aht_cmd_soft_reset)) < 0) {
+		ret = i2c_write_dt(&config->bus, &aht_cmd_soft_reset[0], ARRAY_SIZE(aht_cmd_soft_reset));
+		if(ret < 0) {
 			LOG_ERR("Failed to do a soft reset");
-			return -EIO;
+			return ret;
 		}
 	}
-
-	/* Wait for chip to boot up */
-	k_msleep(AHT_RESET_DELAY_MS);
 
 	return 0;
 }
@@ -74,7 +80,7 @@ static int aht_load_calibration_values(const struct device *dev)
 	const struct aht_config *config = dev->config;
 	int ret = 0;
 
-	ret = i2c_write_dt(&config->bus, &aht_cmd_load_calibration[0], sizeof(aht_cmd_load_calibration));
+	ret = i2c_write_dt(&config->bus, &aht_cmd_load_calibration[0], ARRAY_SIZE(aht_cmd_load_calibration));
 	if(ret < 0) {
 		LOG_ERR("Failed to load calibration values");
 		return ret;
@@ -88,28 +94,17 @@ static int aht_load_calibration_values(const struct device *dev)
 static int aht_start_measurement(const struct device *dev)
 {
 	const struct aht_config *config = dev->config;
-	int ret = 0;
 
-	ret = i2c_write_dt(&config->bus, &aht_cmd_start_measurement[0], sizeof(aht_cmd_start_measurement));
-	if(ret < 0) {
-		LOG_ERR("Failed to start measurement");
-	}
-
-	return ret;
+	return i2c_write_dt(&config->bus, &aht_cmd_start_measurement[0], ARRAY_SIZE(aht_cmd_start_measurement));
 }
 
-static uint8_t aht_read_status(const struct device *dev)
+static int aht_read_status(const struct device *dev, uint8_t* status)
 {
 	const struct aht_config *config = dev->config;
-	uint8_t rx_buf;
+	uint8_t status_cmd = 0x71u;
 
-	if(i2c_read_dt(&config->bus, &rx_buf, sizeof(rx_buf)) < 0) {
-		/* Fail-safe value on failed read */
-		rx_buf = AHT_STATUS_BUSY;
-		LOG_ERR("Failed to read device status");
-	}
-
-	return rx_buf;
+	return i2c_write_read_dt(&config->bus, &status_cmd, sizeof(status_cmd), status, sizeof(*status));
+	/*return i2c_read_dt(&config->bus, status, 1);*/
 }
 
 static int aht_sample_fetch(const struct device *dev,
@@ -118,31 +113,46 @@ static int aht_sample_fetch(const struct device *dev,
 	const struct aht_config *config = dev->config;
 	struct aht_data *data = dev->data;
 	uint8_t rx_buf[7];
+	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 	
-	aht_start_measurement(dev);
-	
+	/* Start measurement */
+	ret = aht_start_measurement(dev);
+	if(ret < 0) {
+		LOG_ERR("Failed to start measurement, error code: %d", ret);
+		return ret;
+	}
+
+	/* Wait for measurement to complete */
 	k_msleep(AHT_MEASUREMENT_DELAY_MS);
-	
-	/* Check measurement done */
-	rx_buf[0] = aht_read_status(dev);
+
+	/* Read device status */
+	ret = aht_read_status(dev, &rx_buf[0]);
+	if(ret < 0) {
+		LOG_ERR("Failed to read device status, error code: %d", ret);
+		return ret;
+	}
+
+	/* Check if measurement is done */
 	if((rx_buf[0] & AHT_STATUS_BUSY) != 0) {
-		/* Measurement timeout */
+		LOG_ERR("Measurement timeout");
 		return -EIO;
 	}
 	
 	/* Read measurement data */
-	if(i2c_read_dt(&config->bus, &rx_buf[0], sizeof(rx_buf)) < 0) {
+	ret = i2c_read_dt(&config->bus, &rx_buf[0], ARRAY_SIZE(rx_buf));
+	if(ret < 0) {
 		LOG_ERR("Failed to read measurement data");
-		return -EIO;
-	}
-	
-	if(!aht_check_crc(&rx_buf[0])) {
-		LOG_ERR("Measurement data CRC mismatch");
-		return -EIO;
+		return ret;
 	}
 
+	/* Check if message CRC is correct */
+	if(!aht_check_crc(&rx_buf[0])) {
+		LOG_WRN("Measurement data CRC mismatch");
+	}
+
+	/* Store raw samples */
 	data->rh_sample = (rx_buf[1] << 12) | (rx_buf[2] << 4) | ((rx_buf[3] >> 4) & 0x0F);
 	data->t_sample = ((rx_buf[3] & 0x0F) << 16) | (rx_buf[4] << 8) | rx_buf[5];
 
@@ -160,12 +170,12 @@ static int aht_channel_get(const struct device *dev,
 		/* temperature = (t_sample * 200 / 2^20) - 50 */
 		tmp = (uint64_t)data->t_sample * 200u * 1000u;
 		val->val1 = ((int32_t)(tmp >> 20u) - 50000) / 1000;
-		val->val2 = ((int32_t)(tmp >> 20u) - 50000) % 1000;
+		val->val2 = (((int32_t)(tmp >> 20u) - 50000) % 1000) * 1000;
 	} else if(chan == SENSOR_CHAN_HUMIDITY) {
 		/* humidity = rh_sample * 100 / 2^20 */
 		tmp = (uint64_t)data->rh_sample * 100u * 1000u;
 		val->val1 = (uint32_t)(tmp >> 20u) / 1000u;
-		val->val2 = (uint32_t)(tmp >> 20u) % 1000u;
+		val->val2 = ((uint32_t)(tmp >> 20u) % 1000u) * 1000;
 	} else {
 		return -ENOTSUP;
 	}
@@ -181,17 +191,42 @@ static const struct sensor_driver_api aht_driver_api = {
 static int aht_init(const struct device *dev)
 {
 	const struct aht_config *config = dev->config;
+	uint8_t status = 0;
 	int ret = 0;
+
+	k_msleep(40);
 
 	if(!device_is_ready(config->bus.bus)) {
 		LOG_ERR("I2C bus %s is not ready!", config->bus.bus->name);
 		return -EINVAL;
 	}
-	
-	ret = aht_reset(dev);
-	
-	ret = aht_load_calibration_values(dev);
 
+	/* Do a chip reset */
+	ret = aht_reset(dev);
+	if(ret < 0) {
+		LOG_ERR("Failed to reset chip, error code: %d", ret);
+		return ret;
+	}
+
+	/* Wait for chip to boot up */
+	k_msleep(AHT_RESET_DELAY_MS);
+
+	/* Read device status */
+	ret = aht_read_status(dev, &status);
+	if(ret < 0) {
+		LOG_ERR("Failed to read device status, error code: %d", ret);
+		return ret;
+	}
+
+	if((status & AHT_STATUS_CALIBRATED) != AHT_STATUS_CALIBRATED)
+	{
+		ret = aht_load_calibration_values(dev);
+		if(ret < 0) {
+			LOG_ERR("Failed to load calibration values, error code: %d", ret);
+			return ret;
+		}
+	}
+	
 	return 0;
 }
 
