@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Byte Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TS_AQU_CCU
+	bool "TS AQU CCU board"
+	depends on SOC_STM32H7A3XX

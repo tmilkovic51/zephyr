@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Byte Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Set SoC present on the board
+CONFIG_SOC_SERIES_STM32H7X=y
+CONFIG_SOC_STM32H7A3XX=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Recommended number of kernel ticks per second for LPTIM timer clocked by 32768 kHz LSE
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=4096
+
+# Enable serial
+CONFIG_SERIAL=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable clocks
+CONFIG_CLOCK_CONTROL=y
+
+# Enable pinctrl
+CONFIG_PINCTRL=y

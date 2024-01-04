@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Byte Lab d.o.o <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TS_AQU_CCU
+
+config BOARD
+	default "ts_aqu_ccu_board"
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_TS_AQU_CCU

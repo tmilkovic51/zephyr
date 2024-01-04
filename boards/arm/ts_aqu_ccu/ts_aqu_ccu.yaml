@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Byte Lab d.o.o. <dev@byte-lab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ts_aqu_ccu
+name: TS AQU CCU board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1024
+flash: 2048
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
