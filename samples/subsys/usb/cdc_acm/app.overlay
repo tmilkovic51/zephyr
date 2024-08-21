@@ -6,6 +6,16 @@
 
 &zephyr_udc0 {
 	cdc_acm_uart0 {
+		status = "okay";
+		tx-fifo-size = <256>;
+		rx-fifo-size = <256>;
+		compatible = "zephyr,cdc-acm-uart";
+	};
+
+	cdc_acm_uart1 {
+		status = "okay";
+		tx-fifo-size = <256>;
+		rx-fifo-size = <256>;
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };

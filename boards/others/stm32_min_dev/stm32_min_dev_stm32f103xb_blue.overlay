@@ -7,10 +7,4 @@
 / {
 	model = "STM32 Minimum Development Board (Blue)";
 	compatible = "stm32_min_dev_blue", "st,stm32f103c8";
-
-	leds {
-		led: led {
-			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
-		};
-	};
 };
