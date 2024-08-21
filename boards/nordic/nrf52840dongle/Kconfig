@@ -7,7 +7,7 @@ if BOARD_NRF52840DONGLE
 
 config BOARD_HAS_NRF5_BOOTLOADER
 	bool "Board has nRF5 bootloader"
-	default y
+	default n
 	help
 	  If selected, applications are linked so that they can be loaded by Nordic
 	  nRF5 bootloader.
