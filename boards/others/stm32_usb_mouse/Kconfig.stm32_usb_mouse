@@ -1,0 +1,4 @@
+# STM32 USB Mouse Configuration
+
+config BOARD_STM32_USB_MOUSE
+	select SOC_STM32F103X8

@@ -1,0 +1,6 @@
+board:
+  name: stm32_usb_mouse
+  full_name: STM32 USB Mouse
+  vendor: others
+  socs:
+    - name: stm32f103xb

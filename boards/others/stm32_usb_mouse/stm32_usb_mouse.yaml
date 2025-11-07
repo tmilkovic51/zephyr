@@ -1,0 +1,23 @@
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 20
+supported:
+  - gpio
+
+
+identifier: stm32_usb_mouse
+name: STM32 USB Mouse
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 20
+flash: 64
+supported:
+  - gpio
+  - usbd
+vendor: others
