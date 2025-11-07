@@ -27,6 +27,12 @@ config SAMPLE_USBD_PID
 	help
 	  USB device sample Product ID.
 
+config SAMPLE_USBD_VID
+	hex "USB device sample Vendor ID"
+	default 0x0001
+	help
+	  USB device sample Vendor ID.
+
 config SAMPLE_USBD_SELF_POWERED
 	bool "USB device sample Self-powered attribute"
 	default y

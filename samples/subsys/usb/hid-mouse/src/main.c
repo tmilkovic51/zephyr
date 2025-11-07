@@ -38,6 +38,43 @@ enum mouse_report_idx {
 K_MSGQ_DEFINE(mouse_msgq, MOUSE_REPORT_COUNT, 2, 1);
 static bool mouse_ready;
 
+static void mouse_timer_cb(struct k_timer *timer_id)
+{
+	static uint8_t tmp[MOUSE_REPORT_COUNT];
+	static uint8_t step = 0;
+
+	ARG_UNUSED(timer_id);
+
+	/* Move mouse horizontally */
+	switch(step) {
+	case 0:
+		tmp[MOUSE_X_REPORT_IDX] += 3u;
+		step = 1;
+		break;
+	case 1:
+		tmp[MOUSE_X_REPORT_IDX] = 0u;
+		step = 2;
+		break;
+	case 2:
+		tmp[MOUSE_X_REPORT_IDX] -= 3u;
+		step = 3;
+		break;
+	case 3:
+		tmp[MOUSE_X_REPORT_IDX] = 0u;
+		step = 0;
+		break;
+		break;
+	default:
+		break;
+	}
+
+	if (k_msgq_put(&mouse_msgq, tmp, K_NO_WAIT) != 0) {
+		LOG_ERR("Failed to put new input event");
+	}
+}
+
+K_TIMER_DEFINE(mouse_timer, mouse_timer_cb, NULL);
+
 static void input_cb(struct input_event *evt, void *user_data)
 {
 	static uint8_t tmp[MOUSE_REPORT_COUNT];
@@ -145,6 +182,9 @@ int main(void)
 	}
 
 	LOG_DBG("USB device support enabled");
+
+	// Report HID mouse position changed every second
+	k_timer_start(&mouse_timer, K_MSEC(1000), K_MSEC(1000));
 
 	while (true) {
 		UDC_STATIC_BUF_DEFINE(report, MOUSE_REPORT_COUNT);
